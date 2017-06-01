@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<!-- Basic Page Needs
+    –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+	<meta charset="utf-8">
+	<title>{{title}}</title>
+	<meta name="description" content="">
+	<meta name="author" content="">
+
+	<!-- Mobile Specific Metas
+    –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<!-- FONT
+    –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+	<link href="//fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+
+	<!-- CSS
+    –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+	<link rel="stylesheet" href="css/normalize.css">
+	<link rel="stylesheet" href="css/skeleton.css">
+	<link rel="stylesheet" href="css/skeleton-alerts.css">
+	<link rel="stylesheet" href="css/custom.css">
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+
+	<!-- Favicon
+    –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+	<link rel="icon" type="image/png" href="images/favicon.png">
+
+</head>
+
+<body>
+	<div id="pre-loaded-data" style="display:none;">
+		<textarea id="mainConfig" style="display:none;">{{{ mainConfig }}}</textarea>
+		<textarea id="instances" style="display:none;">{{{ instances }}}</textarea>
+		<textarea id="savedScripts" style="display:none;">{{{ savedScripts }}}</textarea>
+		<textarea id="backgroundScripts" style="display:none;">{{{ backgroundScripts }}}</textarea>
+		<script>
+			// Global variables
+			window.grv = window.grv || {};
+			window.grv.mainConfig = JSON.parse(document.getElementById('mainConfig').value);
+			window.grv.instances = JSON.parse(document.getElementById('instances').value);
+			window.grv.savedScripts = JSON.parse(document.getElementById('savedScripts').value);
+			window.grv.backgroundScripts = JSON.parse(document.getElementById('backgroundScripts').value);
+		</script>
+	</div>
+	<div id="searchApp">{{{ body }}}</div>
+</body>
+
+<!-- jQuery for ajax requests -->
+<script src="/js/jquery-3.2.1.min.js"></script>
+
+<!-- Vue & app code -->
+<script src="/js/vue.js"></script>
+<script src="/js/searchApp.js"></script>
+
+</html>

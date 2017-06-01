@@ -1,0 +1,387 @@
+<!-- Display alerts -->
+<span id="alert" class="alert" :class="getAlertClass(alertType)">\{{ alertMsg }}</span>
+
+<div class="container" v-cloak>
+	
+	<div v-show="searching && !searchComplete">
+		<div id="progress-bar"></div>
+	</div> <!-- End: searching div -->
+	
+	<div id="global-search">
+		
+		<div id="nav-bars" class="nav">
+			<span id="pinned-count" v-show="pinnedIds.length > 0" v-on:click="setAppMode('pinned')">
+				<i class="fa fa-thumb-tack" aria-hidden="true"></i> \{{ pinnedIds.length }}
+			</span>
+			<i class="fa fa-bars" aria-hidden="true" v-on:click="showNav = !showNav"></i>
+			
+			<ul id="nav-panel" class="nav-panel" 
+				v-bind:class="{ expanded: showNav }" 
+				v-on:mouseleave="showNav = false">
+				<li v-for="(mode, index) in availableModes" 
+					:key="index"
+					v-on:click="showNav = false; setAppMode(mode);">
+					\{{ getPinnedCountForMenu(mode) }} \{{ mode.charAt(0).toUpperCase() + mode.slice(1) }}
+				</li>
+			</ul>
+		</div>
+		
+		<h4 id="main-header">Search ServiceNow</h4>
+		
+		<div class="row" v-show="!settingsMode">
+			
+			<div class="six columns">
+				<label for="global-search-instance">
+					Select a ServiceNow Instance
+				</label>
+				<select id="global-search-instance" name="global-search-instance" type="select" tabindex="1"
+				v-model="selectedInstance" 
+				v-on:change="mainConfig.activeInstance = selectedInstance; saveConfigChanges();">
+					<option disabled value>--Select one--</option>
+					<option v-for="snInstance in instances" :value="snInstance">\{{ snInstance }}</option>
+				</select>
+			</div>
+			
+			<div class="six columns">
+				<div v-show="searchMode || editMode">
+					<label for="global-search-table">
+						Select a Script Type
+					</label>
+					<select id="global-search-table" name="global-search-table" type="select" tabindex="2" v-model="selectedTable" >
+						<option disabled value>--Select one--</option>
+						<option v-for="table in mainConfig.tables" :value="table.name">\{{ table.label }}</option>
+					</select>
+				</div>
+				
+				<div v-show="executeMode">
+					<label for="global-search-execute">
+						Select a Background Script
+					</label>
+					<select id="global-search-execute" name="global-search-execute" type="select" tabindex="2" v-model="selectedBS">
+						<option v-for="scriptName in backgroundScripts[selectedInstance]" :value="scriptName">\{{ scriptName }}</option>
+					</select>
+				</div>
+			</div>
+		
+		</div> <!-- End: form rows -->
+		
+		<div v-show="searchMode"> <!-- Start: search -->
+		
+			<label id="search-glass" for="global-search-input">
+				<i class="fa fa-search" aria-hidden="true"></i>
+				<span class="sr-only">Search icons</span>
+			</label>
+			<input id="global-search-input" name="global-search-input" type="text" placeholder="Hit 'Enter' to search" tabindex="3" 
+				v-model="searchString" 
+				v-on:keyup.enter="executeSearch"></input>
+			
+		</div> <!-- End: search from -->
+		
+		<!-- Start: Results table -->
+		<div class="body-wrapper" v-show="(searchMode && results.length > 0) || editMode || pinnedMode">
+			<table id="search-results-table" style="width:100%;">
+				<thead>
+					<tr>
+						<th id="action-column">Actions</th>
+						<th id="name-column">Name</th>
+						<th id="description-column">Description</th>
+					</tr>
+				</thead>
+				<tbody name="list" is="transition-group">
+					<tr v-for="(result, index) in results" :key="result.sys_id" class="list-item">
+						<td id="action-column">
+							<a href="#" id="download-script" class="action-button" 
+								v-on:click="downloadScript(selectedInstance, result)" 
+								v-show="showDownloadScriptButton(result)">
+									<i class="fa fa-download" aria-hidden="true"></i>
+							</a>
+							<a href="#" id="script-downloaded" class="action-button disabled"  
+								v-show="showDownloadedButton(result)">
+									<i class="fa fa-check" aria-hidden="true"></i>
+							</a>
+							<a href="#" id="delete-script" class="action-button" 
+								v-show="showDeleteButton(result)">
+									<i class="fa fa-minus-circle" aria-hidden="true"
+										v-show="markedDelete != index"
+										v-on:click="markedDelete = index"></i>
+							</a>
+							<a href="#" id="delete-script" class="action-button" 
+								v-show="showDeleteButton(result)">
+									<i class="fa fa-trash-o" aria-hidden="true" 
+										v-show="markedDelete == index"
+										v-on:click="deleteScript(selectedInstance, result, index)"
+										v-on:mouseleave="markedDelete = -1"></i>
+							</a>
+							<a href="#" id="upload-script" class="action-button" 
+								v-on:click="uploadToServiceNow(selectedInstance, result)" 
+								v-show="pinnedMode">
+									<i class="fa fa-cloud-upload" aria-hidden="true"></i>
+							</a>
+							<a href="#" id="reload-script" class="action-button" 
+								v-on:click="downloadScript(selectedInstance, result)" 
+								v-show="pinnedMode">
+									<i class="fa fa-refresh" aria-hidden="true"></i>
+							</a>
+							<a href="#" id="pin-script" class="action-button" 
+								v-on:click="pinScript(selectedInstance, result)" 
+								v-show="showPinButton(result)">
+									<i class="fa fa-thumb-tack" aria-hidden="true"></i>
+							</a>
+						</td>
+						<td id="name-column" :class="{ delete: markedDelete == index }">\{{ getResultValue(result, "name", selectedTable) }}</td>
+						<td id="description-column" :class="{ delete: markedDelete == index }">\{{ getResultValue(result, "description", selectedTable) }}</td>
+					</tr>
+				</tbody>
+			</table>
+			
+		</div> <!-- End: Results table -->
+		
+		<!-- Section for Background Script Execution results -->
+		<div id="execute" class="body-wrapper" v-if="executeMode">
+			<div id="bs-button-wrapper" class="row">
+				<div class="one-third column"><h5>Script Results</h5></div>
+				<div class="two-thirds column">
+					<div class="button-group-right" v-if="instanceCSRF[selectedInstance]">
+						<button id="bs-execute" class="warning" 
+							v-on:click="executeBackgroundScript(selectedInstance, selectedBS)"
+							v-show="instanceCSRF[selectedInstance].refreshedToday">Run Script</button>
+						<button id="bs-execute" class="warning" 
+							v-on:click="refreshCSRF(selectedInstance)"
+							v-show="!instanceCSRF[selectedInstance].refreshedToday">Refresh CSRF</button>
+						<button id="bs-cookie-update" v-on:click="showCookieWindow = !showCookieWindow">Update Cookie</button>
+					</div>
+				</div>
+				<div class="twelve columns">
+					<div style="display:inline-block;">
+						CSRF: 
+						<template v-if="instanceCSRF[selectedInstance].refreshedToday">
+							<span style="color:green;">Ready to Execute</span>
+							<div class="icon-link-group-right">
+								<a href="#" v-on:click="refreshCSRF(selectedInstance)">
+									<i class="fa fa-refresh" aria-hidden="true"></i>
+								</a>
+								<a href="#" v-on:click="alertCSRF(instanceCSRF[selectedInstance].csrf)">
+									<i class="fa fa-eye" aria-hidden="true"></i>
+								</a>
+							</div>
+						</template>
+						<template v-else>
+							* Click on the 'Refresh CSRF' Button *
+						</template>
+					</div>
+				</div>
+			</div>
+			
+			<div v-show="bsResult.timing" style="padding:0;">
+				<p style="margin: 10px 0 5px 0;">
+					<span style="font-weight:bold;margin-right:5px;"> Execution Time:</span> \{{ bsResult.timing }}
+				</p>
+				<hr style="margin-top: 0;"/>
+			</div>
+			<div id="bs-result" v-html="bsResult.output"></div>
+			
+			<div class="modal-outer" v-show="showCookieWindow">
+				<div class="modal-inner">
+					<div class="modal-content">
+						<div class="modal-title">
+							<h5>
+								Paste Your Cookie String
+								<a href="#" v-on:click="showCookieWindow = !showCookieWindow">
+									<i class="fa fa-times" aria-hidden="true"></i>
+								</a>
+							</h5>
+						</div>
+						
+						<textArea id="bs-cookie-text" v-model="bsCookie"></textArea>
+						<div class="button-group-right">
+							<button v-on:click="showCookieWindow = !showCookieWindow; saveConfigChanges();">Save</button>
+						</div>
+						
+					</div>
+				</div>
+			</div>
+		</div> <!-- End: background script -->
+		
+		<!-- Section for settings -->
+		<div id="settings-wrapper" class="body-wrapper" v-if="settingsMode">
+			
+			<div class="button-group-right">
+				<button v-on:click="saveConfigChanges()" :disabled="!configChanged" :class="{ warning: configChanged }">
+					<template v-if="configChanged">
+						Save Settings
+					</template>
+					<template v-else>
+						Make a Change
+					</template>
+				</button>
+				<button v-on:click="undoAllConfigChanges()" v-show="configChanged">
+					<template v-if="configChanged">
+						Undo All
+					</template>
+				</button>
+				<p>Settings & Authentication</p>
+			</div>
+			
+			<!-- Start: auth section -->
+			<label for="instance-auth">
+				Instance Auth
+				<i id="table-add" class="fa fa-plus"
+					v-on:click="addNewAuthRow()"></i>
+			</label>
+			<div id="table-tree">
+				<table>
+					<thead>
+						<tr>
+							<th>Instance</th>
+							<th>User</th>
+							<th>Password (Plain Text)</th>
+							<th>Basic Auth (Encoded)</th>
+							<th class="no-border"></th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr id="instance-auth" v-for="(auth, i) in mainConfig.auth">
+							<td width="15%" v-bind:class="{ 'first-row': i == 0 }">
+								<input type="text" v-model="auth.instance"></input>
+			 				</td>
+			 				<td width="15%" v-bind:class="{ 'first-row': i == 0 }">
+			 					<input type="text" v-model="auth.user"></input>
+			 				</td>
+			 				<td width="25%" v-bind:class="{ 'first-row': i == 0 }">
+			 					<input type="text" v-model="auth.pass"></input>
+			 				</td>
+			 				<td width="35%" v-bind:class="{ 'first-row': i == 0 }">
+			 					<input type="text" v-model="auth.encoded" disabled></input>
+			 				</td>
+			 				<td width="10%" v-bind:class="{ 'first-row': i == 0 }">
+			 					<i id="table-delete" class="fa fa-ban" aria-hidden="true" v-on:click="deleteConfigAuthRow(auth, i)"></i>
+			 				</td>
+						</tr>
+					</tbody>
+				</table>
+			</div> <!-- End: auth table tree -->
+			
+			<!-- Form fields section -->
+			<div class="row">
+				<div class="one-half column">
+					<fieldset>
+						<label for="instance-name">
+							Active Instance
+						</label>
+						<select id="instance-name" type="select" tabindex="1"
+						v-model="selectedInstance" v-on:change="mainConfig.activeInstance = selectedInstance">
+							<option disabled value>--Select one--</option>
+							<option v-for="snInstance in instances" :value="snInstance">\{{ snInstance }}</option>
+						</select>
+						
+						<div class="input-error" v-show="settingsFormErrors.activeInstance">
+							\{{ settingsFormErrors.activeInstance }}
+						</div>
+					</fieldset>
+				</div>
+				<div class="one-half column">
+					<fieldset>
+						<label for="sync-files-path">
+							File Path to Store Synced Files
+						</label>
+						<input id="sync-files-path" type="text" 
+							v-model="mainConfig.sync_files_path"></input>
+						
+						<div class="input-error" v-show="settingsFormErrors.sync_files_path">
+							\{{ settingsFormErrors.sync_files_path }}
+						</div>
+					</fieldset>
+				</div>
+			</div>
+			<div class="row">
+				<div class="one-half column">
+					<fieldset>
+						<label for="search-limit">
+							Search Result Limit
+						</label>
+						<input id="search-limit" type="text" 
+							v-model="mainConfig.search_limit"></input>
+					</fieldset>
+				</div>
+				<div class="one-half column">
+					<fieldset>
+						<label for="query-fields">
+							Search Fields to Include
+						</label>
+						<input id="query-fields" type="text" 
+							v-model="mainConfig.default_query_feilds"></input>
+					</fieldset>
+				</div>
+			</div> <!-- End: form fields section -->
+			
+			<label for="available-tables">
+				Available Tables
+				<i id="table-add" class="fa fa-plus"
+					v-on:click="mainConfig.tables.push({name:'',label:''})"></i>
+			</label>
+			<div id="table-tree">
+				<table>
+					<thead>
+						<tr>
+							<th>Name</th>
+							<th>Label</th>
+							<th>Alternate "Name" Field</th>
+							<th>Alternate "Description" Field</th>
+							<th class="no-border"></th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr id="available-tables" v-for="(entry, i) in mainConfig.tables">
+							<td width="25%" v-bind:class="{ 'first-row': i == 0 }">
+								<input type="text" v-model="entry.name"></input>
+			 				</td>
+			 				<td width="25%" v-bind:class="{ 'first-row': i == 0 }">
+			 					<input type="text" v-model="entry.label"></input>
+			 				</td>
+			 				<td width="20%" v-bind:class="{ 'first-row': i == 0 }">
+			 					<input type="text" v-model="entry.alternate_name_field"></input>
+			 				</td>
+			 				<td width="20%" v-bind:class="{ 'first-row': i == 0 }">
+			 					<input type="text" v-model="entry.alternate_description_field"></input>
+			 				</td>
+			 				<td width="10%" v-bind:class="{ 'first-row': i == 0 }">
+			 					<i id="table-delete" class="fa fa-ban" aria-hidden="true" v-on:click="deleteConfigTableRow(entry, i)"></i>
+			 				</td>
+						</tr>
+					</tbody>
+				</table>
+			</div> <!-- End: table tree -->
+			
+			<!-- Welcome message modal -->
+			<div class="modal-outer" v-show="showSettingsWelcome">
+				<div class="modal-inner">
+					<div class="modal-content">
+						<div class="modal-title">
+							<h5>
+								Welcome to The Script Sync Tool
+								<a href="#" v-on:click="showSettingsWelcome = !showSettingsWelcome">
+									<i class="fa fa-times" aria-hidden="true"></i>
+								</a>
+							</h5>
+						</div>
+						
+						<p>
+							Thanks for trying out the sync tool by Jared Healy (Gearvy LLC)!<br/>
+							It looks like this is the first time you've started up the utility. The first step is to configure your settings and add credentials.
+						</p>
+						<p>
+							If you encounter problems or have questions pleas utilize the Bitbucket issue tracker. I hope this utility adds value to your day.
+						</p>
+						<p style="text-align:right;">
+							Thanks!<br/>
+							Jared Healy<br/>
+							<a href="https://gearvy.com">Gearvy LLC</a>
+						</p>
+					</div>
+				</div>
+			</div>
+			
+		</div> <!-- End: settings section -->
+		
+	</div> <!-- End: global-search div -->
+</div> <!-- End: searchApp div -->

@@ -1,0 +1,92 @@
+{
+	"activeInstance": "",
+	"sync_files_path": "",
+	"tables": [
+		{
+			"name": "sys_script",
+			"label": "Business Rule",
+			"alternate_name_field": ""
+		},
+		{
+			"name": "sys_script_include",
+			"label": "Script Include",
+			"alternate_name_field": ""
+		},
+		{
+			"name": "sys_script_client",
+			"label": "Client Script",
+			"alternate_name_field": ""
+		},
+		{
+			"name": "sys_script_email",
+			"label": "Email Script",
+			"alternate_name_field": ""
+		},
+		{
+			"name": "catalog_script_client",
+			"label": "Catalog Client Script",
+			"alternate_name_field": ""
+		},
+		{
+			"name": "sys_ui_action",
+			"label": "UI Action",
+			"alternate_name_field": ""
+		},
+		{
+			"name": "sys_ui_page",
+			"label": "UI Page",
+			"alternate_name_field": ""
+		},
+		{
+			"name": "sys_ui_macro",
+			"label": "UI Macro",
+			"alternate_name_field": ""
+		},
+		{
+			"name": "sys_ui_script",
+			"label": "UI Script",
+			"alternate_name_field": ""
+		},
+		{
+			"name": "sc_cat_item_producer",
+			"label": "Record Producer",
+			"alternate_name_field": ""
+		},
+		{
+			"name": "sysevent_in_email_action",
+			"label": "Inbound Email Action",
+			"alternate_name_field": ""
+		},
+		{
+			"name": "sysevent_script_action",
+			"label": "Script Action (Events)",
+			"alternate_name_field": ""
+		},
+		{
+			"name": "sys_web_service",
+			"label": "Scripted Web Service",
+			"alternate_name_field": ""
+		},
+		{
+			"name": "sysauto_script",
+			"label": "Scheduled Script Execution",
+			"alternate_name_field": ""
+		}
+	],
+	"fields": [
+		"script",
+		"html",
+		"xml",
+		"processing_script",
+		"client_script",
+		"source_script",
+		"operation_script"
+	],
+	"extension": {
+		"html": ".html",
+		"xml": ".xml"
+	},
+	"search_limit": 10,
+	"default_query_feilds": "name,u_name,sys_id,u_description,description,sys_class_name",
+	"auth": []
+}

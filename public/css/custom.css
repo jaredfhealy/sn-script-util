@@ -1,0 +1,364 @@
+/***********************
+* Cloak for Clean Load
+***********************/
+[v-cloak] {display: none;}
+
+.container-full {
+	width: 95%;
+	max-width: 95%;
+	clear: both;
+	margin: 0 auto;
+}
+
+/***********************
+* Search & Progress Bar
+***********************/
+#main-header {
+	border-bottom: 1px solid #D1D1D1;
+}
+
+.body-wrapper {
+	margin-top: 10px;
+}
+
+#global-search {
+	position: relative;
+	margin-top: 60px;
+}
+
+#global-search-input {
+	width: 100%;
+	padding-left: 30px;
+}
+
+#global-search select {
+	width: 100%;
+}
+
+#global-search-header>h4 {
+	text-align: center;
+}
+
+#search-glass {
+	position: absolute;
+	padding-top: .4em;
+	left: 10px;
+}
+
+#progress-bar {
+	position: fixed;
+	top: 0;
+	left: 0;
+	background-color: #1EAEDB;
+	width: 0px;
+	height: 5px;
+	-webkit-transition: width 2s; /* Safari */
+    transition: width 2s;
+}
+
+#progress-bar.complete {
+	width: 100%;
+}
+
+.warning {
+	background-color: #F1C40F;
+}
+
+/************************
+* Action Buttons & Table
+************************/
+a.action-button {
+	font-size: 1.6em;
+	padding: 0 5%;
+	cursor: pointer;
+	text-decoration: none;
+}
+
+#delete-script {
+    color: #c30606;
+}
+
+#search-results-table {
+	line-height: 1;
+}
+
+#action-column {
+	width: 10%;
+}
+
+#name-column {
+	width: 30%;
+}
+
+#description-column {
+	width: 60%;
+}
+
+.action-button.disabled {
+	color: #555;
+}
+
+.action-button.disabled:hover {
+	color: #555;
+	cursor: default;
+}
+
+.delete {
+	text-decoration: line-through;
+	color: #c30606;
+}
+
+.button-group-right > button {
+	margin: 0 10px;
+	float: right;
+}
+
+.button-group-right {
+	margin-bottom: 10px;
+}
+
+.button-group-right:after {
+	content: "";
+    display: table;
+    clear: both;
+}
+
+.icon-link-group-right {
+	margin: 0 10px;
+	float: right;
+}
+
+/********************
+* Table Animation 
+*********************/
+.list-enter-active,
+.list-leave-active {
+	transition: all .5s;
+}
+
+.list-enter,
+.list-leave-to {
+	opacity: 0;
+	transform: translateX(100px);
+}
+
+/********************
+* Navigation NEW 
+*********************/
+.nav ul, li, div {
+	box-sizing: border-box;
+}
+
+#nav-bars > .fa-bars {
+	font-size: 1.7em;
+}
+
+#nav-bars {
+	float: right;
+	font-size: 1.2em;
+	line-height: 1;
+	width: 200px;
+	text-align: right;
+	position: relative;
+	margin: 5px 5px 0 0;
+}
+
+.fa-bars:hover {
+	cursor: pointer;
+}
+
+#nav-panel {
+	max-height: 0;
+}
+
+#nav-panel.expanded {
+	max-height: 500px;
+	border-top: 5px solid #1EAEDB;
+	border-right: 1px solid #D1D1D1;
+	border-bottom: 1px solid #D1D1D1;
+	border-left: 1px solid #D1D1D1;
+}
+
+.nav ul {
+	list-style-type: none;
+	line-height: 1.5;
+	text-align: right;
+	position: fixed;
+	z-index: 2;
+	background-color: #fff;
+	width: 200px;
+	border: 0;
+	padding: 0;
+	overflow: hidden;
+	transition: all .5s;
+}
+
+.nav li {
+	padding: 10px;
+	margin: 0;
+}
+
+.nav li:hover {
+	cursor: pointer;
+	background-color: #D1D1D1;
+}
+
+#pinned-count {
+	margin-right: 5px;
+}
+
+#pinned-count:hover {
+	cursor: pointer;
+	color: #1EAEDB;
+}
+
+
+/********************
+* Background Script 
+*********************/
+#execute {
+	margin-top: 15px;
+}
+
+#bs-cookie-text {
+	width: 100%;
+	height: 400px;
+}
+
+#bs-cookie-save {
+	float: right;
+}
+
+#bs-button-wrapper {
+	width: 100%;
+}
+
+#bs-button-wrapper {
+	border-bottom: 1px solid #D1D1D1;
+}
+
+
+/****************
+* Basic Modal
+****************/
+.modal-outer {
+	border: 0;
+	margin: 0;
+	padding: 0;
+	position: fixed;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	left: 0;
+	background-color: rgba(0, 0, 0, 0.65);
+	z-index: 1;
+	overflow: auto;
+}
+
+.modal-inner {
+	margin: 10% auto;
+	padding: 15px;
+	max-width: 600px;
+}
+
+.modal-title {
+	margin: 0 0 15px 0;
+}
+
+.modal-title a {
+	float: right;
+}
+
+.modal-title h1,
+.modal-title h2,
+.modal-title h3,
+.modal-title h4,
+.modal-title h5 {
+	padding-bottom: 10px;
+	border-bottom: 1px solid #D1D1D1;
+}
+
+.modal-content {
+	background-color: #fff;
+	opacity: 1;
+	min-height: 300px;
+	padding: 15px;
+}
+
+
+/****************
+* Settings Page
+****************/
+#settings-wrapper input[type="text"] {
+	width: 100%;
+	margin-bottom: 0;
+}
+
+.input-error {
+	color: #c30606;
+}
+
+.input-error:before {
+	content: "* ";
+}
+
+#table-tree input[type="text"] {
+	margin: 3px;
+	height: 30px;
+}
+
+#table-tree table {
+	width: 100%;
+	margin-left: 15px;
+}
+
+#table-tree td.first-row {
+	padding-top: 8px;
+}
+
+#table-tree td {
+	padding: 0 5px;
+	border: 0;
+	vertical-align: middle;
+}
+
+#table-tree th {
+	padding-top: 0;
+	padding-bottom: 0;
+}
+
+#tree-icon-column {
+	border-left: 2px solid #D1D1D1;
+	color: #D1D1D1;
+	font-size: 1em;
+	padding: 0;
+	margin: 0;
+}
+
+#tree-icon {
+	color: #D1D1D1;
+	font-size: 1em;
+	padding: 0;
+	margin: 0;
+}
+
+#table-delete {
+	color: #c30606;
+	font-size: 1.2em;
+	cursor: pointer;
+}
+
+#table-add {
+	color: #1EAEDB;
+	font-size: 1.2em;
+	display: inline;
+	margin-left: 10px;
+	cursor: pointer;
+}
+
+/*****************
+* Override Styles
+*****************/
+.no-border {
+	border: 0;
+}

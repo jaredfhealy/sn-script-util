@@ -1,0 +1,128 @@
+{
+	"activeInstance": "dev28666",
+	"sync_files_path": "/Users/jaredhealy/Documents/code",
+	"tables": [
+		{
+			"name": "sys_script",
+			"label": "Business Rule",
+			"alternate_name_field": ""
+		},
+		{
+			"name": "sys_script_include",
+			"label": "Script Include",
+			"alternate_name_field": ""
+		},
+		{
+			"name": "sys_script_client",
+			"label": "Client Script",
+			"alternate_name_field": ""
+		},
+		{
+			"name": "sys_script_email",
+			"label": "Email Script",
+			"alternate_name_field": ""
+		},
+		{
+			"name": "catalog_script_client",
+			"label": "Catalog Client Script",
+			"alternate_name_field": ""
+		},
+		{
+			"name": "sys_ui_action",
+			"label": "UI Action",
+			"alternate_name_field": ""
+		},
+		{
+			"name": "sys_ui_page",
+			"label": "UI Page",
+			"alternate_name_field": ""
+		},
+		{
+			"name": "sys_ui_macro",
+			"label": "UI Macro",
+			"alternate_name_field": ""
+		},
+		{
+			"name": "sys_ui_script",
+			"label": "UI Script",
+			"alternate_name_field": ""
+		},
+		{
+			"name": "sc_cat_item_producer",
+			"label": "Record Producer",
+			"alternate_name_field": ""
+		},
+		{
+			"name": "sysevent_in_email_action",
+			"label": "Inbound Email Action",
+			"alternate_name_field": ""
+		},
+		{
+			"name": "sysevent_script_action",
+			"label": "Script Action (Events)",
+			"alternate_name_field": ""
+		},
+		{
+			"name": "sys_web_service",
+			"label": "Scripted Web Service",
+			"alternate_name_field": ""
+		},
+		{
+			"name": "sysauto_script",
+			"label": "Scheduled Script Execution",
+			"alternate_name_field": ""
+		}
+	],
+	"fields": [
+		"script",
+		"html",
+		"xml",
+		"processing_script",
+		"client_script",
+		"source_script",
+		"operation_script"
+	],
+	"extension": {
+		"html": ".html",
+		"xml": ".xml"
+	},
+	"search_limit": 10,
+	"default_query_feilds": "name,u_name,sys_id,u_description,description,sys_class_name",
+	"auth": [
+		{
+			"instance": "davitadev",
+			"user": "jhealy",
+			"pass": "",
+			"encoded": "Basic amhlYWx5OnlKc29hWGp0cXIudEUpRThI",
+			"csrf": "",
+			"cookieString": "",
+			"cookieArr": [],
+			"csrfRefreshedToday": false
+		},
+		{
+			"instance": "davitalabsdev",
+			"user": "jhealy",
+			"pass": "",
+			"encoded": "Basic amhlYWx5OmFHSDlrQXR6ckhhTXpAVQ==",
+			"csrf": "",
+			"cookieString": "",
+			"cookieArr": [],
+			"csrfRefreshedToday": false
+		},
+		{
+			"instance": "dev28666",
+			"user": "admin",
+			"pass": "",
+			"encoded": "Basic YWRtaW46QkVxTkh4N0NzSEVx",
+			"csrf": "07cb26064f033200dcb88fe18110c7241e17446d18dbb2e81cf90291c034751a96fcfd0e",
+			"cookieString": "JSESSIONID=006974B15314C5B9CFF1E2164718A2E0; glide_user=\"U0N2MjpYTmtXYkx4ZXgyd2dJc216MFUwTm5nNzB2WUVPdHhWMg==\"; glide_user_session=\"U0N2MjpYTmtXYkx4ZXgyd2dJc216MFUwTm5nNzB2WUVPdHhWMg==\"; glide_session_store=03CB26064F033200DCB88FE18110C724",
+			"cookieArr": [
+				"JSESSIONID=006974B15314C5B9CFF1E2164718A2E0",
+				"glide_user=\"U0N2MjpYTmtXYkx4ZXgyd2dJc216MFUwTm5nNzB2WUVPdHhWMg==\"",
+				"glide_user_session=\"U0N2MjpYTmtXYkx4ZXgyd2dJc216MFUwTm5nNzB2WUVPdHhWMg==\"",
+				"glide_session_store=03CB26064F033200DCB88FE18110C724"
+			],
+			"csrfRefreshedToday": true
+		}
+	]
+}
