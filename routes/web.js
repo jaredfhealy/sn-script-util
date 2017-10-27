@@ -6,8 +6,19 @@ var utils = require('../lib/utils');
 
 // Index route
 router.get('/', function(req, res, next) {
-	// Re-read the config file for each page refresh
-	var configObj = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'config.json'), 'utf8'));
+	// Path to the config
+	var configPath = path.join(__dirname, '..', 'config.json');
+	var configObj = {};
+
+	try {
+		fs.accessSync(configPath);
+		// Re-read the config file for each page refresh
+		configObj = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+	}
+	catch(err) {
+		// Read the example config
+		configObj = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'example.config.json'), 'utf8'));
+	}
 	
 	// Handle \" in the JSON string by also escaping the slash, \\"
 	var configString = JSON.stringify(configObj);

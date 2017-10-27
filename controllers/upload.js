@@ -15,10 +15,9 @@ module.exports = (req, res) => {
 	
 	// Get all directories underneath wich are the fields
 	var fieldDir = fs.readdirSync(sysIdPath);
-	
-	// Setup the body object JSON
+
+	// Setup bodyObj
 	var putBodyObj = {};
-	var hasContent = false;
 	
 	// Add each feild as a parameter and value on the body
 	for (var key in fieldDir) {
@@ -27,63 +26,56 @@ module.exports = (req, res) => {
 		
 		// Get the filepath
 		var filePath = path.join(sysIdPath, fieldDir[key], req.query.name + extension);
-		var content = fs.readFileSync(filePath, 'utf8');
-		if (content != "") {
-			putBodyObj[fieldDir[key]] = content;
-			hasContent = true;
+		
+		try {
+			fs.accessSync(filePath);
+			putBodyObj[fieldDir[key]] = fs.readFileSync(filePath, 'utf8');
+		}
+		catch (e) {
+			// Do nothing: That field doesn't have any content so no file exists
 		}
 	}
 
-	// If we have content, update ServiceNow
-	if (hasContent) {
-		// Convert the body object to JSON
-		var bodyString = JSON.stringify(putBodyObj);
-		
-		// Build the API endpoint url
-		var url = "https://" + req.query.snInstance + ".service-now.com/api/now/table/";
-		url += req.query.table + '/' + req.query.sys_id;
+	// Convert the file contents to JSON
+	var bodyString = JSON.stringify(putBodyObj);
+	
+	// Build the API endpoint url
+	var url = "https://" + req.query.snInstance + ".service-now.com/api/now/table/";
+	url += req.query.table + '/' + req.query.sys_id;
 
-		// Set some custom headers to suppress returned data
-		var instanceAuth = auth.getInstanceAuth(req.query.snInstance, configObj);
-		var options = {
-			method: "PUT",
-			url: url,
-			headers: {
-				"X-no-response-body": "true",
-				Authorization: instanceAuth.encoded
-			},
-			body: bodyString
-		};
+	// Set some custom headers to suppress returned data
+	var instanceAuth = auth.getInstanceAuth(req.query.snInstance, configObj);
+	var options = {
+		method: "PUT",
+		url: url,
+		headers: {
+			"X-no-response-body": "true",
+			Authorization: instanceAuth.encoded
+		},
+		body: bodyString
+	};
 
-		// Make the put request
-		request(options, function(error, response, body) {
-			// If there was an error, output it
-			if (error) {
-				console.log("Request PUT: " + error);
-			}
+	// Make the put request
+	request(options, function(error, response, body) {
+		// If there was an error, output it
+		if (error) {
+			console.log("Request PUT: " + error);
+		}
 
-			// Check the response code was 200
-			if (!error && (response.statusCode == 200 || response.statusCode == 204)) {
-				res.json({
-					success: true,
-					status: 'success',
-					message: "Updated Successfully: " + req.query.name
-				});
-			}
-			else {
-				res.json({
-					success: false,
-					status: 'error',
-					message: "Unknown error: " + body
-				});
-			}
-		});
-	}
-	else {
-		res.json({
-			success: false,
-			status: 'error',
-			message: 'The script file appears to be blank. Please validate there is content to upload'
-		});
-	}
+		// Check the response code was 200
+		if (!error && (response.statusCode == 200 || response.statusCode == 204)) {
+			res.json({
+				success: true,
+				status: 'success',
+				message: "Updated Successfully: " + req.query.name
+			});
+		}
+		else {
+			res.json({
+				success: false,
+				status: 'error',
+				message: "Unknown error: " + body
+			});
+		}
+	});
 };

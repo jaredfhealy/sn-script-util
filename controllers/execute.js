@@ -27,7 +27,8 @@ module.exports = (req, res) => {
 				url: url,
 				headers: {
 					Cookie: instanceAuth.cookieString,
-					Authorization: ""
+					Authorization: "",
+					"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36"
 				}
 			};
 			
@@ -93,7 +94,8 @@ module.exports = (req, res) => {
 			url: url,
 			headers: {
 				Cookie: instanceAuth.cookieString,
-				Authorization: ""
+				Authorization: "",
+				"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36"
 			},
 			form: {
 				script: fileContent,
@@ -129,11 +131,19 @@ module.exports = (req, res) => {
 					timing: timing
 				});
 			}
+			else if (response.statusCode != 200 && body == "") {
+				// Not authenticated properly
+				res.json({
+					success: false,
+					status: "error",
+					message: "Received status code: " + response.statusCode + " - Try again or update your cookie and token."
+				});
+			}
 			else {
 				res.json({
 					success: false,
 					status: "error",
-					message: body
+					message: "Status Code: " + response.statusCode + " -> " + body
 				});
 			}
 		});

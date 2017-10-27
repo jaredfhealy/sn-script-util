@@ -1,5 +1,37 @@
+var nav = {
+	props: ["pinnedCount"],
+	data: function() {
+		return {
+			showNav: false,
+			availableModes: ["search", "edit", "pinned", "execute", "settings"]
+		}
+	},
+	methods: {
+		selectMode: function(mode) {
+			// Emit the navigate event to parent
+			this.$emit('navigate', mode);
+
+			// Make sure navigation is closed
+			this.showNav = false;
+		},
+
+		getPinnedCountForMenu: function(mode) {
+			if (mode == 'pinned' && this.pinnedCount > 0) {
+				return "(" + this.pinnedCount + ")";
+			}
+		},
+	}
+};
+
 var searchApp = new Vue({
 	el: '#searchApp',
+	components: {
+		gvNav: nav
+	},
+	created: function() {
+		// Load keyboard shortcuts for quick upload
+		window.addEventListener('keyup', this.handleUploadKeyupEvent);
+	},
 	data: {
 		mainConfig: window.grv.mainConfig,
 		instances: window.grv.instances,
@@ -10,17 +42,17 @@ var searchApp = new Vue({
 		
 		searchString: '',
 		results: [],
-		selectedTable: "",
+		selectedTable: window.grv.mainConfig.tables[0].name,
 		selectedInstance: window.grv.mainConfig.activeInstance,
 		searching: false,
 		searchComplete: true,
-		availableModes: ["search", "edit", "pinned", "execute", "settings"],
 		appMode: "search",
 		alertType: "success",
 		alertMsg: "",
 		pinnedList: {},
 		showNav: false,
 		markedDelete: -1,
+		markedReload: -1,
 		
 		backgroundScripts: window.grv.backgroundScripts,
 		selectedBS: "Background Script.js",
@@ -68,27 +100,7 @@ var searchApp = new Vue({
 			// Return the computed object
 			return scriptObj;
 		},
-		
-		searchMode: function() {
-			return this.appMode === 'search';
-		},
-		
-		editMode: function() {
-			return this.appMode === 'edit';
-		},
-		
-		pinnedMode: function() {
-			return this.appMode === 'pinned';
-		},
-		
-		executeMode: function() {
-			return this.appMode === 'execute';
-		},
-		
-		settingsMode: function() {
-			return this.appMode === 'settings';
-		},
-		
+
 		pinnedIds: function() {
 			// Simple array to return
 			var ids = [];
@@ -110,6 +122,26 @@ var searchApp = new Vue({
 			return ids;
 		},
 		
+		searchMode: function() {
+			return this.appMode === 'search';
+		},
+		
+		editMode: function() {
+			return this.appMode === 'edit';
+		},
+		
+		pinnedMode: function() {
+			return this.appMode === 'pinned';
+		},
+		
+		executeMode: function() {
+			return this.appMode === 'execute';
+		},
+		
+		settingsMode: function() {
+			return this.appMode === 'settings';
+		},
+		
 		instanceCSRF: function() {
 			// Transform the config auth to a basic hash object by instance
 			var csrfObj = {};
@@ -122,7 +154,6 @@ var searchApp = new Vue({
 					if (typeof(csrfObj[authArr[i].instance]) == 'undefined') {
 						csrfObj[authArr[i].instance] = {};
 					}
-					csrfObj[authArr[i].instance].refreshedToday = authArr[i].csrfRefreshedToday;
 					csrfObj[authArr[i].instance].csrf = authArr[i].csrf;
 				}
 			}
@@ -163,7 +194,6 @@ var searchApp = new Vue({
 						for (var j = 0; j < rawCookieArr.length; j++) {
 							// Get just the name of the cookie
 							var cookieName = rawCookieArr[j].split('=')[0].trim();
-							console.error("cookieName: " + cookieName);
 							
 							// If this cookie is in the list we want, save it
 							if (cookiesWeNeed.indexOf(cookieName) != -1) {
@@ -172,7 +202,6 @@ var searchApp = new Vue({
 						}
 						
 						// Save the processed cookie to the instance auth cookie
-						console.dir(newCookieArr);
 						authArr[i].cookieArr = newCookieArr;
 						authArr[i].cookieString = newCookieArr.join('; ');
 					}
@@ -182,7 +211,7 @@ var searchApp = new Vue({
 	},
 	watch: {
 		selectedInstance: function() {
-			// Only if this isn't the settings page
+			// Only if this isn't the settingsMode
 			if (!this.settingsMode) {
 				// Set mode to reload data
 				this.setAppMode(this.appMode);
@@ -191,7 +220,7 @@ var searchApp = new Vue({
 		
 		selectedTable: function() {
 			// Table changes in "pinned" mode don't require a reload of data set
-			if (this.appMode != 'pinned') {
+			if (!this.pinnedMode) {
 				// All other modes, set the mode to handle data
 				this.setAppMode(this.appMode);
 			}
@@ -358,8 +387,6 @@ var searchApp = new Vue({
 		},
 		
 		uploadToServiceNow: function(snInstance, result) {
-			// Upload the script fields for this record to ServiceNow
-			console.log("Uploading...");
 			// Store reference to vue instance
 			var self = this;
 			
@@ -375,7 +402,7 @@ var searchApp = new Vue({
 				contentType: "application/json",
 				data: {
 					snInstance: snInstance,
-					table: this.selectedTable,
+					table: result.sys_class_name,
 					sys_id: result.sys_id,
 					name: result.name
 				},
@@ -403,6 +430,65 @@ var searchApp = new Vue({
 				$('#progress-bar').addClass('complete');
 			}, 500);
 		},
+
+		handleUploadKeyupEvent: function(e) {
+			// Use the data property to track execution: uploadKeyCombo
+			// Key combos: Shift + i + up arrow (Where "i" is the index of the pinned script)
+			// Number key codes 1 - 9 (97 - 105)
+			if (this.pinnedMode && this.pinnedIds.length > 0) {
+				var numberMap = {49:1,50:2,51:3,52:4,53:5,54:6,55:7,56:8,57:9};
+				if (e.keyCode >= 49 && e.keyCode <= 57 && e.ctrlKey) {
+					console.log("Upload pined scirpt with index: " + numberMap[e.keyCode]);
+					var resultIndex = numberMap[e.keyCode] - 1;
+					this.uploadToServiceNow(this.selectedInstance, this.results[resultIndex]);
+				}
+			}
+		},
+
+		refreshBackgroundScripts: function(selectedInstance) {
+			// Get the background scripts from the file system
+			// Store reference to vue instance
+			var self = this;
+			
+			// Track the search progress
+			self.searching = true;
+			self.searchComplete = false;
+			
+			// Execute the request
+			$.ajax({
+				url: "/api/files",
+				method: "GET",
+				dataType: "json",
+				contentType: "application/json",
+				data: {
+					target: 'backgroundScripts'
+				},
+				cache: false,
+				success: function(data) {
+					self.searching = false;
+					self.searchComplete = true;
+					$('#progress-bar').removeClass('complete');
+					
+					// Alert success
+					if (data.success) {
+						self.showAlert("Refreshed Successfully", data.status);
+						self.backgroundScripts = data.backgroundScriptsObj;
+						self.selectedBS = self.backgroundScripts[self.selectedInstance][0];
+					}
+					else {
+						self.showAlert("Issue encountered: " + data.message, data.status);
+					}
+				},
+				error: function(jqXHR) {
+					console.log("Error encountered: " + jqXHR.responseText);
+				}
+			});
+			
+			// Set progress bar width to 100%
+			setTimeout(function(){
+				$('#progress-bar').addClass('complete');
+			}, 500);
+		},
 		
 		executeBackgroundScript: function(snInstance, scriptName) {
 			// Store reference to vue instance
@@ -411,6 +497,8 @@ var searchApp = new Vue({
 			// Track the search progress
 			self.searching = true;
 			self.searchComplete = false;
+			self.bsResult.output = "Executing Script... please wait...";
+			self.bsResult.timing = "";
 			
 			// Initiate the post to trigger the execute
 			// Execute the request
@@ -478,7 +566,6 @@ var searchApp = new Vue({
 					if (data.success) {
 						// Update the results
 						self.instanceCSRF[snInstance].csrf = data.csrf;
-						self.instanceCSRF[snInstance].refreshedToday = true;
 						self.showAlert(data.message, data.status);
 						
 						// Update the mainConfig and save the changes
@@ -486,7 +573,6 @@ var searchApp = new Vue({
 						for (var i = 0; i < authArr.length; i++) {
 							if (authArr[i].instance == snInstance) {
 								authArr[i].csrf = data.csrf;
-								authArr[i].csrfRefreshedToday = true;
 							}
 						}
 						
@@ -663,6 +749,11 @@ var searchApp = new Vue({
 					this.pinnedList[snInstance].splice(i, 1);
 				}
 			}
+
+			// Overwrite the pinned list so that the computed property is triggered
+			var pinnedList = this.pinnedList;
+			this.pinnedList = {};
+			this.pinnedList = pinnedList;
 		},
 		
 		showDownloadScriptButton: function(result) {
@@ -753,12 +844,6 @@ var searchApp = new Vue({
 		
 		isPinned: function(result) {
 			return this.pinnedIds.indexOf(result.sys_id) != -1;
-		},
-		
-		getPinnedCountForMenu: function(mode) {
-			if (mode == 'pinned' && this.pinnedIds.length > 0) {
-				return "(" + this.pinnedIds.length + ")";
-			}
 		},
 		
 		deleteConfigTableRow: function(entry, i) {
@@ -880,11 +965,13 @@ var searchApp = new Vue({
 			rowObj.csrf = "";
 			rowObj.cookieString = "";
 			rowObj.cookieArr = [];
-			rowObj.csrfRefreshedToday = false;
 			
 			// Push the empty object on to the auth array
 			this.mainConfig.auth.push(rowObj);
 		}
+	},
+	beforeDestroy: function() {
+		this.$off('navigate');
 	},
 	mounted: function() {
 		// Set preloaded data values from the global window.grv values

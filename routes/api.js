@@ -13,6 +13,7 @@ router.get('/upload', require('../controllers/upload'));
 router.get('/execute', require('../controllers/execute'));
 router.get('/config', require('../controllers/config'));
 router.post('/config', require('../controllers/config'));
+router.get('/files', require('../controllers/files'));
 
 // Export the router
 module.exports = router;

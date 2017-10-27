@@ -74,8 +74,12 @@ a.action-button {
 	text-decoration: none;
 }
 
-#delete-script {
+.delete a {
     color: #c30606;
+}
+
+#reload-script {
+	color: #c30606;
 }
 
 #search-results-table {
@@ -84,6 +88,10 @@ a.action-button {
 
 #action-column {
 	width: 10%;
+}
+
+#action-column a {
+	float: left;
 }
 
 #name-column {

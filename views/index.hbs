@@ -1,7 +1,7 @@
 <!-- Display alerts -->
 <span id="alert" class="alert" :class="getAlertClass(alertType)">\{{ alertMsg }}</span>
 
-<div class="container" v-cloak>
+<div id="app-container" class="container" v-cloak>
 	
 	<div v-show="searching && !searchComplete">
 		<div id="progress-bar"></div>
@@ -9,24 +9,27 @@
 	
 	<div id="global-search">
 		
-		<div id="nav-bars" class="nav">
-			<span id="pinned-count" v-show="pinnedIds.length > 0" v-on:click="setAppMode('pinned')">
-				<i class="fa fa-thumb-tack" aria-hidden="true"></i> \{{ pinnedIds.length }}
-			</span>
-			<i class="fa fa-bars" aria-hidden="true" v-on:click="showNav = !showNav"></i>
-			
-			<ul id="nav-panel" class="nav-panel" 
-				v-bind:class="{ expanded: showNav }" 
-				v-on:mouseleave="showNav = false">
-				<li v-for="(mode, index) in availableModes" 
-					:key="index"
-					v-on:click="showNav = false; setAppMode(mode);">
-					\{{ getPinnedCountForMenu(mode) }} \{{ mode.charAt(0).toUpperCase() + mode.slice(1) }}
-				</li>
-			</ul>
-		</div>
+		<!-- Nav -->
+		<gv-nav inline-template :pinned-count="pinnedIds.length" @navigate="setAppMode">
+			<div id="nav-bars" class="nav">
+				<span id="pinned-count" v-show="pinnedCount > 0" @click="selectMode('pinned')">
+					<i class="fa fa-thumb-tack" aria-hidden="true"></i> \{{ pinnedCount }}
+				</span>
+				<i class="fa fa-bars" aria-hidden="true" @click="showNav = !showNav"></i>
+				
+				<ul id="nav-panel" class="nav-panel" 
+					:class="{ expanded: showNav }" 
+					@mouseleave="showNav = false">
+					<li v-for="(mode, index) in availableModes" 
+						:key="index"
+						@click="selectMode(mode);">
+						\{{ getPinnedCountForMenu(mode) }} \{{ mode.charAt(0).toUpperCase() + mode.slice(1) }}
+					</li>
+				</ul>
+			</div>
+		</gv-nav>
 		
-		<h4 id="main-header">Search ServiceNow</h4>
+		<h4 id="main-header">ServiceNow Scripting</h4>
 		
 		<div class="row" v-show="!settingsMode">
 			
@@ -35,8 +38,8 @@
 					Select a ServiceNow Instance
 				</label>
 				<select id="global-search-instance" name="global-search-instance" type="select" tabindex="1"
-				v-model="selectedInstance" 
-				v-on:change="mainConfig.activeInstance = selectedInstance; saveConfigChanges();">
+					v-model="selectedInstance"
+					@change="mainConfig.activeInstance = selectedInstance; saveConfigChanges()">
 					<option disabled value>--Select one--</option>
 					<option v-for="snInstance in instances" :value="snInstance">\{{ snInstance }}</option>
 				</select>
@@ -56,8 +59,12 @@
 				<div v-show="executeMode">
 					<label for="global-search-execute">
 						Select a Background Script
+						<a href="#" @click="refreshBackgroundScripts()">
+							<i class="fa fa-refresh" aria-hidden="true"></i>
+						</a>
 					</label>
 					<select id="global-search-execute" name="global-search-execute" type="select" tabindex="2" v-model="selectedBS">
+						<option disabled value>--Select one--</option>
 						<option v-for="scriptName in backgroundScripts[selectedInstance]" :value="scriptName">\{{ scriptName }}</option>
 					</select>
 				</div>
@@ -73,25 +80,27 @@
 			</label>
 			<input id="global-search-input" name="global-search-input" type="text" placeholder="Hit 'Enter' to search" tabindex="3" 
 				v-model="searchString" 
-				v-on:keyup.enter="executeSearch"></input>
+				@keyup.enter="executeSearch"></input>
 			
 		</div> <!-- End: search from -->
 		
 		<!-- Start: Results table -->
-		<div class="body-wrapper" v-show="(searchMode && results.length > 0) || editMode || pinnedMode">
+		<div class="body-wrapper" v-show="(searchMode && results.length > 0) || !settingsMode">
 			<table id="search-results-table" style="width:100%;">
 				<thead>
 					<tr>
 						<th id="action-column">Actions</th>
 						<th id="name-column">Name</th>
-						<th id="description-column">Description</th>
+						<th id="description-column" v-show="!pinnedMode && !executeMode">Description</th>
 					</tr>
 				</thead>
 				<tbody name="list" is="transition-group">
 					<tr v-for="(result, index) in results" :key="result.sys_id" class="list-item">
 						<td id="action-column">
+
+							<!-- searchMode -->
 							<a href="#" id="download-script" class="action-button" 
-								v-on:click="downloadScript(selectedInstance, result)" 
+								@click="downloadScript(selectedInstance, result)" 
 								v-show="showDownloadScriptButton(result)">
 									<i class="fa fa-download" aria-hidden="true"></i>
 							</a>
@@ -99,37 +108,63 @@
 								v-show="showDownloadedButton(result)">
 									<i class="fa fa-check" aria-hidden="true"></i>
 							</a>
-							<a href="#" id="delete-script" class="action-button" 
-								v-show="showDeleteButton(result)">
-									<i class="fa fa-minus-circle" aria-hidden="true"
-										v-show="markedDelete != index"
-										v-on:click="markedDelete = index"></i>
-							</a>
-							<a href="#" id="delete-script" class="action-button" 
-								v-show="showDeleteButton(result)">
-									<i class="fa fa-trash-o" aria-hidden="true" 
-										v-show="markedDelete == index"
-										v-on:click="deleteScript(selectedInstance, result, index)"
-										v-on:mouseleave="markedDelete = -1"></i>
-							</a>
-							<a href="#" id="upload-script" class="action-button" 
-								v-on:click="uploadToServiceNow(selectedInstance, result)" 
-								v-show="pinnedMode">
-									<i class="fa fa-cloud-upload" aria-hidden="true"></i>
-							</a>
-							<a href="#" id="reload-script" class="action-button" 
-								v-on:click="downloadScript(selectedInstance, result)" 
-								v-show="pinnedMode">
-									<i class="fa fa-refresh" aria-hidden="true"></i>
-							</a>
+
+							<!-- editMode -->
+							<div class="delete" v-show="showDeleteButton(result)">
+								<a href="#" class="action-button" 
+									v-show="markedDelete != index"
+									@click="markedDelete = index">
+										<i class="fa fa-minus-circle" aria-hidden="true"></i>
+								</a>
+								<a href="#" class="action-button" 
+									v-show="markedDelete == index"
+									@click="deleteScript(selectedInstance, result, index)"
+									@mouseleave="markedDelete = -1">
+										<i class="fa fa-trash-o" aria-hidden="true"></i>
+								</a>
+							</div>
+
+							<!-- searchMode and editMode -->
 							<a href="#" id="pin-script" class="action-button" 
-								v-on:click="pinScript(selectedInstance, result)" 
+								@click="pinScript(selectedInstance, result)" 
 								v-show="showPinButton(result)">
 									<i class="fa fa-thumb-tack" aria-hidden="true"></i>
 							</a>
+
+							<!-- pinnedMode -->
+							<a href="#" id="upload-script" class="action-button" 
+								@click="uploadToServiceNow(selectedInstance, result)" 
+								v-show="pinnedMode || executeMode">
+									<i class="fa fa-cloud-upload" aria-hidden="true"></i>
+							</a>
+							<a href="#" id="unpin-script" class="action-button" 
+								@click="unpinScript(selectedInstance, result)"
+								v-show="pinnedMode || executeMode">
+									<i class="fa fa-chain-broken" aria-hidden="true"></i>
+							</a>
+
+							<!-- pinnedMode refresh -->
+							<div v-show="pinnedMode || executeMode">
+								<a href="#" id="mark-reload-script" class="action-button" 
+									v-show="markedReload != index"
+									@click="markedReload = index">
+										<i class="fa fa-refresh" aria-hidden="true"></i>
+								</a>
+								<a href="#" id="reload-script" class="action-button" 
+									@click="downloadScript(selectedInstance, result)" 
+									v-show="markedReload == index" 
+									@mouseleave="markedReload = -1">
+										<i class="fa fa-download" aria-hidden="true"></i>
+								</a>
+							</div>
+
 						</td>
-						<td id="name-column" :class="{ delete: markedDelete == index }">\{{ getResultValue(result, "name", selectedTable) }}</td>
-						<td id="description-column" :class="{ delete: markedDelete == index }">\{{ getResultValue(result, "description", selectedTable) }}</td>
+						<td id="name-column" :class="{ delete: markedDelete == index }">
+							\{{ getResultValue(result, "name", selectedTable) }}
+						</td>
+						<td id="description-column" :class="{ delete: markedDelete == index }" v-show="!pinnedMode && !executeMode">
+							\{{ getResultValue(result, "description", selectedTable) }}
+						</td>
 					</tr>
 				</tbody>
 			</table>
@@ -143,31 +178,26 @@
 				<div class="two-thirds column">
 					<div class="button-group-right" v-if="instanceCSRF[selectedInstance]">
 						<button id="bs-execute" class="warning" 
-							v-on:click="executeBackgroundScript(selectedInstance, selectedBS)"
-							v-show="instanceCSRF[selectedInstance].refreshedToday">Run Script</button>
-						<button id="bs-execute" class="warning" 
-							v-on:click="refreshCSRF(selectedInstance)"
-							v-show="!instanceCSRF[selectedInstance].refreshedToday">Refresh CSRF</button>
-						<button id="bs-cookie-update" v-on:click="showCookieWindow = !showCookieWindow">Update Cookie</button>
+							@click="executeBackgroundScript(selectedInstance, selectedBS)">
+								Run Script
+						</button>
+						<button id="bs-cookie-update" 
+							@click="bsCookie = ''; showCookieWindow = !showCookieWindow"
+							v-show="!executeThroughIframe">Update Cookie</button>
 					</div>
 				</div>
 				<div class="twelve columns">
 					<div style="display:inline-block;">
 						CSRF: 
-						<template v-if="instanceCSRF[selectedInstance].refreshedToday">
-							<span style="color:green;">Ready to Execute</span>
-							<div class="icon-link-group-right">
-								<a href="#" v-on:click="refreshCSRF(selectedInstance)">
-									<i class="fa fa-refresh" aria-hidden="true"></i>
-								</a>
-								<a href="#" v-on:click="alertCSRF(instanceCSRF[selectedInstance].csrf)">
-									<i class="fa fa-eye" aria-hidden="true"></i>
-								</a>
-							</div>
-						</template>
-						<template v-else>
-							* Click on the 'Refresh CSRF' Button *
-						</template>
+						<span style="color:green;">Ready to Execute</span>
+						<div class="icon-link-group-right">
+							<a href="#" @click="refreshCSRF(selectedInstance)">
+								<i class="fa fa-refresh" aria-hidden="true"></i>
+							</a>
+							<a href="#" @click="alertCSRF(instanceCSRF[selectedInstance].csrf)">
+								<i class="fa fa-eye" aria-hidden="true"></i>
+							</a>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -186,7 +216,7 @@
 						<div class="modal-title">
 							<h5>
 								Paste Your Cookie String
-								<a href="#" v-on:click="showCookieWindow = !showCookieWindow">
+								<a href="#" @click="showCookieWindow = !showCookieWindow">
 									<i class="fa fa-times" aria-hidden="true"></i>
 								</a>
 							</h5>
@@ -194,7 +224,7 @@
 						
 						<textArea id="bs-cookie-text" v-model="bsCookie"></textArea>
 						<div class="button-group-right">
-							<button v-on:click="showCookieWindow = !showCookieWindow; saveConfigChanges();">Save</button>
+							<button @click="showCookieWindow = !showCookieWindow; saveConfigChanges();">Save</button>
 						</div>
 						
 					</div>
@@ -206,7 +236,7 @@
 		<div id="settings-wrapper" class="body-wrapper" v-if="settingsMode">
 			
 			<div class="button-group-right">
-				<button v-on:click="saveConfigChanges()" :disabled="!configChanged" :class="{ warning: configChanged }">
+				<button @click="saveConfigChanges()" :disabled="!configChanged" :class="{ warning: configChanged }">
 					<template v-if="configChanged">
 						Save Settings
 					</template>
@@ -214,7 +244,7 @@
 						Make a Change
 					</template>
 				</button>
-				<button v-on:click="undoAllConfigChanges()" v-show="configChanged">
+				<button @click="undoAllConfigChanges()" v-show="configChanged">
 					<template v-if="configChanged">
 						Undo All
 					</template>
@@ -226,7 +256,7 @@
 			<label for="instance-auth">
 				Instance Auth
 				<i id="table-add" class="fa fa-plus"
-					v-on:click="addNewAuthRow()"></i>
+					@click="addNewAuthRow()"></i>
 			</label>
 			<div id="table-tree">
 				<table>
@@ -254,7 +284,7 @@
 			 					<input type="text" v-model="auth.encoded" disabled></input>
 			 				</td>
 			 				<td width="10%" v-bind:class="{ 'first-row': i == 0 }">
-			 					<i id="table-delete" class="fa fa-ban" aria-hidden="true" v-on:click="deleteConfigAuthRow(auth, i)"></i>
+			 					<i id="table-delete" class="fa fa-ban" aria-hidden="true" @click="deleteConfigAuthRow(auth, i)"></i>
 			 				</td>
 						</tr>
 					</tbody>
@@ -269,7 +299,7 @@
 							Active Instance
 						</label>
 						<select id="instance-name" type="select" tabindex="1"
-						v-model="selectedInstance" v-on:change="mainConfig.activeInstance = selectedInstance">
+						v-model="selectedInstance" @change="mainConfig.activeInstance = selectedInstance">
 							<option disabled value>--Select one--</option>
 							<option v-for="snInstance in instances" :value="snInstance">\{{ snInstance }}</option>
 						</select>
@@ -317,7 +347,7 @@
 			<label for="available-tables">
 				Available Tables
 				<i id="table-add" class="fa fa-plus"
-					v-on:click="mainConfig.tables.push({name:'',label:''})"></i>
+					@click="mainConfig.tables.push({name:'',label:''})"></i>
 			</label>
 			<div id="table-tree">
 				<table>
@@ -345,7 +375,7 @@
 			 					<input type="text" v-model="entry.alternate_description_field"></input>
 			 				</td>
 			 				<td width="10%" v-bind:class="{ 'first-row': i == 0 }">
-			 					<i id="table-delete" class="fa fa-ban" aria-hidden="true" v-on:click="deleteConfigTableRow(entry, i)"></i>
+			 					<i id="table-delete" class="fa fa-ban" aria-hidden="true" @click="deleteConfigTableRow(entry, i)"></i>
 			 				</td>
 						</tr>
 					</tbody>
@@ -359,7 +389,7 @@
 						<div class="modal-title">
 							<h5>
 								Welcome to The Script Sync Tool
-								<a href="#" v-on:click="showSettingsWelcome = !showSettingsWelcome">
+								<a href="#" @click="showSettingsWelcome = !showSettingsWelcome">
 									<i class="fa fa-times" aria-hidden="true"></i>
 								</a>
 							</h5>
