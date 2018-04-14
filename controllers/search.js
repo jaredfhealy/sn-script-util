@@ -79,11 +79,11 @@ module.exports = (req, res) => {
 						result: bodyObj.result
 					});
 				}
-				else if (typeof(body.error.detail) != 'undefined') {
+				else if (typeof(bodyObj.error.detail) != 'undefined') {
 					res.json({
 						success: false,
 						status: "error",
-						message: body.error.detail + ". Double check your password."
+						message: bodyObj.error.detail + ". Double check your password."
 					});
 				}
 				else {
